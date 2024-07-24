@@ -35,6 +35,6 @@ Route::middleware(['auth'])->group(function() {
         Route::post('createTarefa', 'createTarefa');
         Route::get('tarefasUsuario', 'tarefasUsuario');
         Route::put('updateTarefaUser/{id}', 'updateTarefaUser');
-
+        Route::delete('deleteTarefaUser/{id}', 'deleteTarefaUser');
     });
 });

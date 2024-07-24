@@ -73,5 +73,29 @@ class TarefasController extends Controller
 
     }
 
+    public function deleteTarefaUser($id) {
+
+
+        $userAuth = Auth::user();
+
+        $tarefa = Tarefas::where('id', '=', $id)
+                    ->where('user_id', '=', $userAuth->id)
+                        ->first();
+
+        if(!$tarefa) {
+            return response()->json([
+                'mensagem' => 'Nao possivel deletar esse recurso ' .$id,
+            ], 400);
+        }
+
+        $tarefa->delete();
+
+        return response()->json([
+            'mensagem' => 'Recurso deletado com sucesso',
+            'data' => $tarefa
+        ], 200);
+
+    }
+
 
 }
