@@ -51,9 +51,7 @@ class TarefasController extends Controller
 
         $request_data = $request->only(['titulo', 'descricao', 'status']);
 
-        $tarefa = Tarefas::where('id', '=', $id)
-                    ->where('user_id', '=', $userAuth->id)
-                        ->first();
+        $tarefa = $this->factoryUserTarefa($id, $userAuth->id);
 
         if(!$tarefa) {
             return response()->json([
@@ -78,9 +76,7 @@ class TarefasController extends Controller
 
         $userAuth = Auth::user();
 
-        $tarefa = Tarefas::where('id', '=', $id)
-                    ->where('user_id', '=', $userAuth->id)
-                        ->first();
+        $tarefa = $this->factoryUserTarefa($id, $userAuth->id);
 
         if(!$tarefa) {
             return response()->json([
@@ -97,5 +93,13 @@ class TarefasController extends Controller
 
     }
 
+    private function factoryUserTarefa($id, $auth_id) {
+
+        $tarefa = Tarefas::where('id', '=', $id)
+                    ->where('user_id', '=', $auth_id)
+                        ->first();
+
+        return $tarefa;
+    }
 
 }
