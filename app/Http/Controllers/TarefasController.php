@@ -34,7 +34,7 @@ class TarefasController extends Controller
 
         $userAuth = Auth::user();
 
-        $tasks = Tarefas::where('user_id', '=', $userAuth->id)->get();
+        $tasks = Tarefas::where('user_id', '=', $userAuth->id)->orderBy('created_at', 'desc')->get();
 
         // dd($tasks->count());
 
