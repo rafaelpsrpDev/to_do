@@ -29,4 +29,18 @@ class TarefasController extends Controller
             'data' => $dbTarefa,
         ], 201);
     }
+
+    public function tarefasUsuario() {
+
+        $userAuth = Auth::user();
+
+        $tasks = Tarefas::where('user_id', '=', $userAuth->id)->get();
+
+        // dd($tasks->count());
+
+        return response()->json([
+            'mensagem' => $tasks->count() > 0 ? 'Recurso Encontrada' : 'Nao existe recurso para esss usuario',
+            'data' => $tasks,
+        ], 200);
+    }
 }

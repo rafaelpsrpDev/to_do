@@ -33,5 +33,6 @@ Route::controller(AuthController::class)->group(function () {
 Route::middleware(['auth'])->group(function() {
     Route::controller(TarefasController::class)->group(function() {
         Route::post('createTarefa', 'createTarefa');
+        Route::get('tarefasUsuario', 'tarefasUsuario');
     });
 });
