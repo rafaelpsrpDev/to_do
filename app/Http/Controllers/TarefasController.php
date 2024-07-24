@@ -34,13 +34,44 @@ class TarefasController extends Controller
 
         $userAuth = Auth::user();
 
-        $tasks = Tarefas::where('user_id', '=', $userAuth->id)->orderBy('created_at', 'desc')->get();
-
-        // dd($tasks->count());
+        $tasks = Tarefas::where('user_id', '=', $userAuth->id)
+                        ->orderBy('created_at', 'desc')
+                             ->get();
 
         return response()->json([
             'mensagem' => $tasks->count() > 0 ? 'Recurso Encontrada' : 'Nao existe recurso para esss usuario',
             'data' => $tasks,
         ], 200);
     }
+
+    public function updateTarefaUser(Request $request, $id) {
+
+        //dd($request->all());
+        $userAuth = Auth::user();
+
+        $request_data = $request->only(['titulo', 'descricao', 'status']);
+
+        $tarefa = Tarefas::where('id', '=', $id)
+                    ->where('user_id', '=', $userAuth->id)
+                        ->first();
+
+        if(!$tarefa) {
+            return response()->json([
+                'mensagem' => 'Nao possivel atualizar esse recurso ' .$id,
+            ], 400);
+        }
+
+        //  dd($tarefa);
+
+        $tarefa->update($request_data);
+        $tarefa->save();
+
+        return response()->json([
+            'mensagem' => 'Atualizacao com sucesso',
+            'data' => $tarefa
+        ], 201);
+
+    }
+
+
 }

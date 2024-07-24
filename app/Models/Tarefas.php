@@ -11,7 +11,7 @@ class Tarefas extends Model
 
     protected $table = 'tarefas';
 
-    protected $fillable = ['titulo', 'descricao', 'user_id'];
+    protected $fillable = ['titulo', 'descricao', 'user_id', 'status'];
 
 
     public function user() {
