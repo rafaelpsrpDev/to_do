@@ -2,98 +2,148 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TarefaRequest;
 use App\Models\Tarefas;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TarefasController extends Controller
 {
 
-    public function createTarefa(Request $request) {
+    private $userAuth;
 
-        $userAuth = Auth::user();
+    public function __construct() {
+        $this->userAuth = Auth::user();
+    }
 
-        $request->validate([
-            'titulo' => 'required|string|max:255',
-            'descricao' => 'string|max:1000',
-        ]);
+    public function createTarefa(TarefaRequest $request) {
 
-        $tarefa = $request->only(['titulo', 'descricao']);
-        $tarefa['user_id'] = $userAuth->id;
-        //dd($tarefa);
-        $dbTarefa = Tarefas::create($tarefa);
+        try {
 
-        return response()->json([
-            'mensagem' => 'Recurso criado com sucesso',
-            'data' => $dbTarefa,
-        ], 201);
+            DB::beginTransaction();
+
+
+            $tarefa = $request->only(['titulo', 'descricao']);
+            $tarefa['user_id'] = $this->userAuth->id;
+
+            $dbTarefa = Tarefas::create($tarefa);
+
+            DB::commit();
+
+            return response()->json([
+                'mensagem' => 'Recurso criado com sucesso',
+                'data' => $dbTarefa,
+            ], 201);
+
+
+        } catch(Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'mensagem' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function tarefasUsuario() {
+        try {
 
-        $userAuth = Auth::user();
+            $tasks = Tarefas::where('user_id', '=', $this->userAuth->id)
+                            ->orderBy('created_at', 'desc')
+                                ->get();
 
-        $tasks = Tarefas::where('user_id', '=', $userAuth->id)
-                        ->orderBy('created_at', 'desc')
-                             ->get();
+            return response()->json([
+                'data' => $tasks,
+            ], 200);
 
-        return response()->json([
-            'mensagem' => $tasks->count() > 0 ? 'Recurso Encontrada' : 'Nao existe recurso para esss usuario',
-            'data' => $tasks,
-        ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function updateTarefaUser(Request $request, $id) {
+    public function updateTarefaUser(TarefaRequest $request, $id) {
 
-        //dd($request->all());
-        $userAuth = Auth::user();
+        try {
 
-        $request_data = $request->only(['titulo', 'descricao', 'status']);
+            DB::beginTransaction();
 
-        $tarefa = $this->factoryUserTarefa($id, $userAuth->id);
+            $request_data = $request->only(['titulo', 'descricao', 'status']);
 
-        if(!$tarefa) {
+            $tarefa = $this->getTarefa($id, $this->userAuth->id);
+
+            if(!$tarefa) {
+                return response()->json([
+                    'mensagem' => 'Nao possivel atualizar esse recurso ' .$id,
+                ], 400);
+            }
+
+            //  dd($tarefa);
+
+            $tarefa->update($request_data);
+            $tarefa->save();
+
+            DB::commit();
+
             return response()->json([
-                'mensagem' => 'Nao possivel atualizar esse recurso ' .$id,
-            ], 400);
+                'mensagem' => 'Atualizacao com sucesso',
+                'data' => $tarefa
+            ], 201);
+
+        } catch (Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'mensagem' => $e->getMessage()
+
+            ], 500);
         }
-
-        //  dd($tarefa);
-
-        $tarefa->update($request_data);
-        $tarefa->save();
-
-        return response()->json([
-            'mensagem' => 'Atualizacao com sucesso',
-            'data' => $tarefa
-        ], 201);
 
     }
 
     public function deleteTarefaUser($id) {
 
+        try {
 
-        $userAuth = Auth::user();
+            DB::beginTransaction();
 
-        $tarefa = $this->factoryUserTarefa($id, $userAuth->id);
+            $tarefa = $this->getTarefa($id, $this->userAuth->id);
 
-        if(!$tarefa) {
+            if(!$tarefa) {
+                return response()->json([
+                    'mensagem' => 'Nao possivel deletar esse recurso ' .$id,
+                ], 400);
+            }
+
+            $tarefa->delete();
+
+            DB::commit();
+
             return response()->json([
-                'mensagem' => 'Nao possivel deletar esse recurso ' .$id,
-            ], 400);
+                'mensagem' => 'Recurso deletado com sucesso',
+                'data' => $tarefa
+            ], 200);
+
+        } catch (Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'mensagem' => $e->getMessage()
+            ], 500);
+
         }
-
-        $tarefa->delete();
-
-        return response()->json([
-            'mensagem' => 'Recurso deletado com sucesso',
-            'data' => $tarefa
-        ], 200);
 
     }
 
-    private function factoryUserTarefa($id, $auth_id) {
+    private function getTarefa($id, $auth_id) {
 
         $tarefa = Tarefas::where('id', '=', $id)
                     ->where('user_id', '=', $auth_id)
